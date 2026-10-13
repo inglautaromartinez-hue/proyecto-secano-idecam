@@ -389,3 +389,7 @@ footer {
 .parcel-popup-content strong { font-size:12px; color:#173e37; overflow-wrap:anywhere; }
 .maplibregl-popup-content { border-radius:12px; box-shadow:0 6px 26px rgba(12,45,37,.18); }
 .parcel-detail dl { grid-template-columns:1fr; }
+
+/* Resumen ejecutivo vinculado a los filtros del mapa */
+.progress-grid.two-stat { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.condition-chart .chart-labels { gap: 16px; }
