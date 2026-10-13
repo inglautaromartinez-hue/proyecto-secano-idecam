@@ -42,7 +42,7 @@ export const DEPARTMENT_NAMES = Object.freeze({
 
 export const COLORS = Object.freeze({
   supletorio: "#d97706",
-  titulo: "#0f766e",
+  titulo: "#2563eb",
   sinDato: "#64748b",
   outline: "#102a2e",
   highlight: "#ef4444"
