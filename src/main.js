@@ -481,8 +481,14 @@ function showParcelPopup(feature, area) {
     row.append(dt, dd);
     container.append(row);
   }
-  activeParcelPopup = new maplibregl.Popup({ offset: 14, closeOnMove: false, maxWidth: "280px" })
-    .setLngLat(center).setDOMContent(container).addTo(map);
+  activeParcelPopup = new maplibregl.Popup({
+    offset: 18,
+    anchor: "bottom",
+    closeOnMove: false,
+    closeOnClick: false,
+    maxWidth: "min(310px, 82vw)",
+    className: "parcel-info-popup"
+  }).setLngLat(center).setDOMContent(container).addTo(map);
 }
 
 function focusFeature(feature) {
