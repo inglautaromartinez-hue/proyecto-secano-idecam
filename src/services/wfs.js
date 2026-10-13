@@ -9,7 +9,7 @@ export async function loadVerifiedParcels({ fetchImpl = fetch } = {}) {
     const autoCandidates = matchDiscoveredLayers(group, discovered);
     const result = await loadFirstAvailableLayer({
       ...group,
-      candidates: [...new Set([...group.candidates, ...autoCandidates])]
+      candidates: [...new Set([...autoCandidates, ...group.candidates])]
     }, fetchImpl);
     if (result) loaded.push(result);
     else failures.push(group.label);
@@ -46,8 +46,11 @@ async function discoverTypeNames(fetchImpl) {
   const documentXml = new DOMParser().parseFromString(xml, "application/xml");
   if (documentXml.querySelector("parsererror")) return [];
 
-  return [...documentXml.querySelectorAll("FeatureType > Name, wfs\\:FeatureType > Name")]
-    .map((node) => node.textContent?.trim())
+  return [...documentXml.getElementsByTagName("*")]
+    .filter((node) => node.localName === "FeatureType")
+    .flatMap((node) => [...node.children]
+      .filter((child) => child.localName === "Name")
+      .map((child) => child.textContent?.trim()))
     .filter(Boolean);
 }
 
@@ -108,7 +111,7 @@ function normalizeFeature(feature, layer) {
 
   const supleta = normalizeSupleta(readCI(properties, ["SUPLETA", "supleta"]));
   const condicion = supleta === 1 ? "Supletorio" : supleta === 0 ? "Con título" : "Sin dato";
-  const depCode = digits(readCI(properties, ["codigo_dep", "codigo_depto"]))?.slice(0, 2) || nc.slice(0, 2);
+  const depCode = nc.slice(0, 2);
 
   return {
     type: "Feature",
