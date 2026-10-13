@@ -46,8 +46,11 @@ async function discoverTypeNames(fetchImpl) {
   const documentXml = new DOMParser().parseFromString(xml, "application/xml");
   if (documentXml.querySelector("parsererror")) return [];
 
-  return [...documentXml.querySelectorAll("FeatureType > Name, wfs\\:FeatureType > Name")]
-    .map((node) => node.textContent?.trim())
+  return [...documentXml.getElementsByTagName("*")]
+    .filter((node) => node.localName === "FeatureType")
+    .flatMap((node) => [...node.children]
+      .filter((child) => child.localName === "Name")
+      .map((child) => child.textContent?.trim()))
     .filter(Boolean);
 }
 
