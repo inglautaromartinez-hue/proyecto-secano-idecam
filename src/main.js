@@ -714,6 +714,8 @@ function finishSheetGesture(event) {
   if (!moved) return;
   suppressHandleClick = true;
   setMobileSheetExpanded(delta < 0);
+  // El click sintético posterior al gesto se ignora; luego se rehabilita el toque.
+  setTimeout(() => { suppressHandleClick = false; }, 100);
 }
 sheetHandle.addEventListener("pointerup", finishSheetGesture);
 sheetHandle.addEventListener("pointercancel", finishSheetGesture);
