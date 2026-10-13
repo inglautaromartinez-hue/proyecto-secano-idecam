@@ -363,3 +363,13 @@ footer {
 .month-row:nth-child(2) .month-track span { background: linear-gradient(90deg, #b45309, #f0b35a); }
 .month-row small { display: block; margin-top: 4px; font-size: 9px; color: #758581; }
 .monthly-note { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid #e8eeeb; font-size: 10px; color: #697b76; line-height: 1.45; }
+
+
+/* Vista ejecutiva institucional */
+.institutional-area { background: linear-gradient(145deg,#f8fcfa,#eaf4f0); border-color:#c8dcd3; }
+.institutional-area .monthly-total { color:#104c42; font-size:34px; }
+.institutional-area .monthly-subtitle { margin-bottom:12px; }
+.coverage-row { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; padding-top:10px; border-top:1px solid #ccded7; font-size:10px; color:#44675c; }
+.coverage-row b { color:#164f47; }
+.chip:disabled { opacity:.36; cursor:not-allowed; border-style:dashed; }
+.empty-filter-note { margin:8px 0 0; padding:11px 12px; border:1px solid #d7e3de; border-radius:10px; color:#435c54; background:#f3f8f5; font-size:11px; line-height:1.5; }
