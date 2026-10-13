@@ -2,7 +2,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { COLORS } from "./config.js";
 import { loadVerifiedParcels } from "./services/wfs.js";
-import { loadBundledVerifiedParcels } from "./services/verified-backup.js";
+import { loadAllParcels } from "./services/all-parcels.js";
 import "./styles.css";
 
 const app = document.querySelector("#app");
@@ -14,7 +14,7 @@ app.innerHTML = [
   '    <svg id="parcel-outline-overlay" class="parcel-outline-overlay" aria-label="Límites de parcelas al acercar el mapa"></svg>',
   '    <div class="top-brand">',
   '      <div><span class="brand-kicker">IDECAM · Colegio de Agrimensura de Mendoza</span><h1>Proyecto Secano</h1></div>',
-  '      <span class="live-pill"><i></i> Base verificada</span>',
+  '      <span class="live-pill"><i></i> 500 parcelas relevadas</span>',
   '    </div>',
   '    <div class="map-tools">',
   '      <button id="basemap-toggle" type="button">Satélite</button>',
@@ -38,22 +38,22 @@ app.innerHTML = [
   '      <div class="progress-head"><div><span>Gestión territorial</span><strong>500</strong></div><small>Parcelas del inventario de trabajo</small></div>',
   '      <div class="progress-track"><span style="width:41%"></span></div>',
   '      <div class="progress-grid">',
-  '        <div><strong>205</strong><span>Cartografiadas</span></div>',
+  '        <div><strong>205</strong><span>Verificadas</span></div>',
   '        <div><strong>295</strong><span>En proceso</span></div>',
   '        <div><strong>41%</strong><span>Cobertura</span></div>',
   '      </div>',
   '    </section>',
     '    <section class="condition-chart" aria-label="Distribución de condición jurídica del inventario">',
   '      <div class="section-title"><span>Condición del inventario</span><small>500 parcelas</small></div>',
-  '      <div class="chart-body"><div class="donut" role="img" aria-label="205 supletorias, 257 con título, 38 sin dato"><span><strong>500</strong><small>parcelas</small></span></div>',
-  '      <div class="chart-labels"><div><i class="chart-dot supletorio"></i><span>Supletorio</span><b>205 · 41%</b></div><div><i class="chart-dot titulo"></i><span>Con título</span><b>257 · 51,4%</b></div><div><i class="chart-dot sindato"></i><span>Sin dato</span><b>38 · 7,6%</b></div></div></div>',
+  '      <div class="chart-body"><div class="donut" role="img" aria-label="207 supletorias, 216 con título, 77 sin dato"><span><strong>500</strong><small>parcelas</small></span></div>',
+  '      <div class="chart-labels"><div><i class="chart-dot supletorio"></i><span>Supletorio</span><b>207 · 41,4%</b></div><div><i class="chart-dot titulo"></i><span>Con título</span><b>216 · 43,2%</b></div><div><i class="chart-dot sindato"></i><span>Sin dato</span><b>77 · 15,4%</b></div></div></div>',
   '      <p class="chart-note">Distribución de la condición registral del inventario de trabajo.</p>',
   '    </section>',
   '    <section class="monthly-card institutional-area" aria-label="Superficie cartografiada del secano">',
   '      <div class="section-title"><span>Superficie secano dibujada</span><small>Cobertura territorial</small></div>',
   '      <strong class="monthly-total">746.539 <span>ha</span></strong>',
   '      <p class="monthly-subtitle">Superficie acumulada de las parcelas incorporadas a la cartografía del proyecto.</p>',
-  '      <div class="coverage-row"><span>205 parcelas cartografiadas</span><b>San Rafael · Malargüe</b></div>',
+  '      <div class="coverage-row"><span>500 parcelas relevadas</span><b>San Rafael · Malargüe</b></div>',
   '    </section>',
 '    <section class="search-section">',
   '      <label for="parcel-search">Buscar parcela o plano</label>',
@@ -63,9 +63,10 @@ app.innerHTML = [
   '    <section class="filters">',
   '      <div class="section-title"><span>Filtros</span><button id="reset-filters" type="button">Restablecer</button></div>',
   '      <div class="filter-block"><span class="filter-label">Departamento</span><div class="chips" id="department-chips"><button type="button" class="chip active" data-department="all">Todos</button></div></div>',
-  '      <div class="filter-block"><span class="filter-label">Condición</span><div class="chips" id="condition-chips"><button type="button" class="chip active" data-condition="all">Todas</button><button type="button" class="chip" data-condition="Supletorio">Supletorio</button><button type="button" class="chip" data-condition="Con título" disabled title="No disponible en la cartografía publicada">Con título</button><button type="button" class="chip" data-condition="Sin dato" disabled title="No disponible en la cartografía publicada">Sin dato</button></div></div>',
+  '      <div class="filter-block"><span class="filter-label">Condición</span><div class="chips" id="condition-chips"><button type="button" class="chip active" data-condition="all">Todas</button><button type="button" class="chip" data-condition="Supletorio">Supletorio</button><button type="button" class="chip" data-condition="Con título">Con título</button><button type="button" class="chip" data-condition="Sin dato">Sin dato</button></div></div>',
+  '      <div class="filter-block"><span class="filter-label">Estado de consolidación</span><div class="chips" id="status-chips"><button type="button" class="chip active" data-status="all">Todas</button><button type="button" class="chip" data-status="Verificada">Verificadas</button><button type="button" class="chip" data-status="En proceso">En proceso</button></div></div>',
   '    </section>',
-  '    <section class="visible-card"><div><span>Parcelas en el mapa</span><strong id="visible-count">—</strong></div><small id="source-status">Cargando cartografía…</small></section>',
+  '    <section class="visible-card"'><div><span>Parcelas en el mapa</span><strong id="visible-count">—</strong></div><small id="source-status">Cargando cartografía…</small></section>',
   '    <p id="empty-filter-note" class="empty-filter-note" hidden>No hay parcelas disponibles con estos filtros. Probá otra opción.</p>',
   '    <section id="parcel-detail" class="parcel-detail" hidden>',
   '      <div class="detail-head"><div><span class="detail-kicker">Parcela seleccionada</span><strong id="detail-condition"></strong></div><button id="detail-close" type="button" aria-label="Cerrar detalle">×</button></div>',
@@ -110,6 +111,7 @@ let filteredFeatures = [];
 let selectedNc = null;
 let departmentFilter = "all";
 let conditionFilter = "all";
+let statusFilter = "all";
 let isSatellite = false;
 let parcelHtmlMarkers = [];
 const polygonOverlay = document.querySelector("#parcel-outline-overlay");
@@ -121,60 +123,22 @@ map.on("load", async () => {
 });
 
 async function loadData() {
-  const status = document.querySelector("#source-status");
-  const setFeatures = (features) => {
-    allFeatures = features;
-    const chips = document.querySelector("#department-chips");
+  const status=document.querySelector("#source-status");
+  try {
+    const result=await loadAllParcels();
+    allFeatures=result.collection.features;
+    const chips=document.querySelector("#department-chips");
     chips.replaceChildren();
-    const all = document.createElement("button");
-    all.type = "button";
-    all.className = "chip active";
-    all.dataset.department = "all";
-    all.textContent = "Todos";
+    const all=document.createElement("button");
+    all.type="button";all.className="chip active";all.dataset.department="all";all.textContent="Todos";
     chips.append(all);
-    departmentFilter = "all";
-    conditionFilter = "all";
-    setActiveByValue("#condition-chips", "condition", "all");
-    clearSelection();
     buildDepartmentFilters();
     applyFilters();
     fitAll();
-    renderHtmlParcelMarkers();
-  };
-
-  let bundleFeatures = [];
-  try {
-    const bundle = await loadBundledVerifiedParcels();
-    bundleFeatures = bundle.collection.features;
-    setFeatures(bundleFeatures);
-    status.textContent = bundleFeatures.length + " verificadas · respaldo cartográfico validado";
-  } catch {
-    status.textContent = "Cargando capas IDECAM (respaldo local no disponible)…";
-  }
-
-  try {
-    const live = await loadVerifiedParcels();
-    const features = live.collection.features;
-    const baseNcs = new Set(bundleFeatures.map((feature) => feature.properties.nc));
-    const liveNcs = new Set(features.map((feature) => feature.properties.nc));
-    const complete = live.failures.length === 0 && features.length >= 205 &&
-      [...baseNcs].every((nc) => liveNcs.has(nc));
-
-    if (complete) {
-      setFeatures(features);
-      status.textContent = features.length + " verificadas · IDECAM WFS en vivo";
-    } else if (bundleFeatures.length) {
-      status.textContent = bundleFeatures.length + " verificadas · respaldo local; WFS incompleto o sin respuesta";
-    } else if (features.length) {
-      setFeatures(features);
-      status.textContent = features.length + " cargadas parcialmente · faltan fuentes WFS";
-    } else {
-      status.textContent = "Sin cartografía disponible; no fue posible recuperar WFS ni respaldo.";
-    }
-  } catch {
-    status.textContent = bundleFeatures.length
-      ? bundleFeatures.length + " verificadas · respaldo local (WFS no disponible)"
-      : "No se pudieron cargar las parcelas verificadas.";
+    status.textContent="500 parcelas relevadas · 205 verificadas y 295 en proceso";
+  } catch (error) {
+    console.error("Carga Secano 500",error);
+    status.textContent="No se pudo cargar el parcelario completo; reintentá actualizando la página.";
   }
 }
 
@@ -271,7 +235,8 @@ function applyFilters() {
     const p = feature.properties;
     const depOk = departmentFilter === "all" || p.departamento === departmentFilter;
     const condOk = conditionFilter === "all" || p.condicion === conditionFilter;
-    return depOk && condOk;
+    const statusOk = statusFilter === "all" || p.estado === statusFilter;
+    return depOk && condOk && statusOk;
   });
 
   const source = map.getSource("parcelas");
@@ -310,7 +275,7 @@ function renderHtmlParcelMarkers() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "parcel-pin";
+    button.className = "parcel-pin" + (feature.properties.verificada ? " pin-verified" : " pin-process");
     button.title = "Ver parcela " + feature.properties.nc;
     button.setAttribute("aria-label", "Ver parcela " + feature.properties.nc);
     button.addEventListener("click", (event) => {
@@ -353,14 +318,15 @@ function renderPolygonOverlay() {
   const viewportHeight = map.getCanvas().clientHeight;
   polygonOverlay.setAttribute("viewBox", "0 0 " + viewportWidth + " " + viewportHeight);
   for (const feature of filteredFeatures) {
-    if (feature.geometry?.type !== "Polygon") continue;
+    if (!["Polygon", "MultiPolygon"].includes(feature.geometry?.type)) continue;
     const bounds = featureBounds(feature);
     if (!bounds) continue;
     const p0 = map.project(bounds[0]), p1 = map.project(bounds[1]);
     if (Math.max(p0.x, p1.x) < -20 || Math.min(p0.x, p1.x) > viewportWidth + 20 ||
         Math.max(p0.y, p1.y) < -20 || Math.min(p0.y, p1.y) > viewportHeight + 20) continue;
     const parts = [];
-    for (const ring of feature.geometry.coordinates) {
+    const polygons = feature.geometry.type === "Polygon" ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+    for (const polygon of polygons) for (const ring of polygon) {
       if (!Array.isArray(ring) || ring.length < 4) continue;
       parts.push("M" + ring.map(([lon, lat]) => {
         const p = map.project([lon, lat]);
@@ -370,7 +336,7 @@ function renderPolygonOverlay() {
     if (!parts.length) continue;
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", parts.join(""));
-    path.setAttribute("class", feature.properties.nc === selectedNc ? "parcel-svg selected" : "parcel-svg");
+    path.setAttribute("class", (feature.properties.verificada ? "parcel-svg verified" : "parcel-svg process") + (feature.properties.nc === selectedNc ? " selected" : ""));
     path.setAttribute("fill-rule", "evenodd");
     path.addEventListener("click", (event) => { event.stopPropagation(); selectFeature(feature.properties.nc); });
     polygonOverlay.append(path);
@@ -407,13 +373,13 @@ function selectFeature(nc) {
 
 function fillDetail(p) {
   const condition = document.querySelector("#detail-condition");
-  condition.textContent = p.condicion || "Sin dato";
+  condition.textContent = (p.condicion || "Sin dato") + " · " + p.estado;
   condition.dataset.condition = p.condicion || "Sin dato";
   document.querySelector("#detail-nc").textContent = formatNc(p.nc);
   document.querySelector("#detail-dep").textContent = p.departamento || "—";
   document.querySelector("#detail-plano").textContent = p.plano || "—";
   document.querySelector("#detail-supleta").textContent = p.supleta === 1 ? "1 · Supletorio" : p.supleta === 0 ? "0 · Con título" : "Sin dato";
-  document.querySelector("#detail-source").textContent = p.periodo || "IDECAM";
+  document.querySelector("#detail-source").textContent = p.estado + " · " + (p.fuenteWfs || "Proyecto Secano");
   document.querySelector("#detail-obs").textContent = p.observacion || "Sin observaciones";
 }
 
@@ -470,9 +436,19 @@ document.querySelector("#condition-chips").addEventListener("click", (event) => 
   applyFilters();
 });
 
+document.querySelector("#status-chips").addEventListener("click",(event)=>{
+  const button=event.target.closest("[data-status]");
+  if(!button)return;
+  statusFilter=button.dataset.status;
+  setActiveChip("#status-chips",button);
+  applyFilters();
+});
+
 document.querySelector("#reset-filters").addEventListener("click", () => {
   departmentFilter = "all";
   conditionFilter = "all";
+  statusFilter = "all";
+  setActiveByValue("#status-chips", "status", "all");
   setActiveByValue("#department-chips", "department", "all");
   setActiveByValue("#condition-chips", "condition", "all");
   document.querySelector("#parcel-search").value = "";
