@@ -255,7 +255,7 @@ footer {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: conic-gradient(#d97706 0 41%, #0f766e 41% 92.4%, #64748b 92.4% 100%);
+  background: conic-gradient(#d97706 0 41.4%, #0f766e 41.4% 84.6%, #64748b 84.6% 100%);
 }
 .donut > span {
   width: 88px;
@@ -373,3 +373,10 @@ footer {
 .coverage-row b { color:#164f47; }
 .chip:disabled { opacity:.36; cursor:not-allowed; border-style:dashed; }
 .empty-filter-note { margin:8px 0 0; padding:11px 12px; border:1px solid #d7e3de; border-radius:10px; color:#435c54; background:#f3f8f5; font-size:11px; line-height:1.5; }
+
+/* Estados de consolidación y geometrías del universo completo */
+.parcel-pin.pin-verified { background: #f59e0b; box-shadow: 0 0 0 2px #8a3c00, 0 3px 12px rgba(0,0,0,.35); }
+.parcel-pin.pin-process { background: #0d9488; box-shadow: 0 0 0 2px #065f56, 0 3px 12px rgba(0,0,0,.3); }
+.parcel-outline-overlay .parcel-svg.verified { fill: rgba(217,119,6,.22); stroke: #b45309; }
+.parcel-outline-overlay .parcel-svg.process { fill: rgba(13,148,136,.17); stroke: #0f766e; }
+.parcel-outline-overlay .parcel-svg.selected { fill: rgba(239,68,68,.24); stroke:#ef4444; stroke-width:4px; }
