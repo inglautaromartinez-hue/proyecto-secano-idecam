@@ -11,6 +11,7 @@ app.innerHTML = [
   '<main class="app-shell">',
   '  <section class="map-stage" aria-label="Mapa Proyecto Secano">',
   '    <div id="map"></div>',
+  '    <svg id="parcel-outline-overlay" class="parcel-outline-overlay" aria-label="Límites de parcelas al acercar el mapa"></svg>',
   '    <div class="top-brand">',
   '      <div><span class="brand-kicker">IDECAM · Colegio de Agrimensura de Mendoza</span><h1>Proyecto Secano</h1></div>',
   '      <span class="live-pill"><i></i> Base verificada</span>',
@@ -47,6 +48,16 @@ app.innerHTML = [
   '      <div class="chart-body"><div class="donut" role="img" aria-label="205 supletorias, 257 con título, 38 sin dato"><span><strong>500</strong><small>parcelas</small></span></div>',
   '      <div class="chart-labels"><div><i class="chart-dot supletorio"></i><span>Supletorio</span><b>205 · 41%</b></div><div><i class="chart-dot titulo"></i><span>Con título</span><b>257 · 51,4%</b></div><div><i class="chart-dot sindato"></i><span>Sin dato</span><b>38 · 7,6%</b></div></div></div>',
   '      <p class="chart-note">Inventario general (crudo + verificado). Sólo las 205 supletorias verificadas están publicadas en este mapa.</p>',
+  '    </section>',
+  '    <section class="monthly-card" aria-label="Superficie parcelaria por mes de origen">',
+  '      <div class="section-title"><span>Superficie por mes</span><small>Cortes verificados</small></div>',
+  '      <strong class="monthly-total">746.539 <span>ha</span></strong>',
+  '      <p class="monthly-subtitle">Superficie geométrica de 205 NC únicas.</p>',
+  '      <div class="monthly-bars" role="img" aria-label="Agosto: 508.938 hectáreas. Septiembre: 237.601 hectáreas.">',
+  '        <div class="month-row"><div class="month-heading"><b>Agosto 2026</b><span>508.938 ha</span></div><div class="month-track"><span style="width:100%"></span></div><small>96 parcelas</small></div>',
+  '        <div class="month-row"><div class="month-heading"><b>Septiembre 2026</b><span>237.601 ha</span></div><div class="month-track"><span style="width:46.7%"></span></div><small>109 parcelas</small></div>',
+  '      </div>',
+  '      <p class="monthly-note">Mes de origen de los lotes entregados, no fecha individual de dibujo. Áreas en EPSG:5344, sin duplicar NC. El lote de septiembre se publicó en octubre.</p>',
   '    </section>',
 '    <section class="search-section">',
   '      <label for="parcel-search">Buscar parcela o plano</label>',
@@ -105,6 +116,8 @@ let departmentFilter = "all";
 let conditionFilter = "all";
 let isSatellite = false;
 let parcelHtmlMarkers = [];
+const polygonOverlay = document.querySelector("#parcel-outline-overlay");
+let overlayScheduled = false;
 
 map.on("load", async () => {
   addParcelLayers();
@@ -280,6 +293,7 @@ function applyFilters() {
   }
   document.querySelector("#visible-count").textContent = filteredFeatures.length.toLocaleString("es-AR");
   renderHtmlParcelMarkers();
+  schedulePolygonOverlay();
 
   if (selectedNc && !filteredFeatures.some((f) => f.properties.nc === selectedNc)) clearSelection();
 }
@@ -316,11 +330,58 @@ function renderHtmlParcelMarkers() {
 function updateHtmlMarkersVisibility() {
   const zoom = map.getZoom();
   for (const marker of parcelHtmlMarkers) {
-    marker.getElement().classList.toggle("pin-hidden", zoom >= 12);
+    marker.getElement().classList.toggle("pin-hidden", zoom >= 9.3);
   }
 }
 
 map.on("zoomend", updateHtmlMarkersVisibility);
+
+// Superposición SVG anclada a la proyección cartográfica, independiente del render GeoJSON.
+function schedulePolygonOverlay() {
+  if (overlayScheduled) return;
+  overlayScheduled = true;
+  requestAnimationFrame(() => {
+    overlayScheduled = false;
+    renderPolygonOverlay();
+  });
+}
+
+function renderPolygonOverlay() {
+  const zoom = map.getZoom();
+  polygonOverlay.replaceChildren();
+  const visible = zoom >= 9.3;
+  polygonOverlay.classList.toggle("overlay-active", visible);
+  if (!visible) return;
+  const viewportWidth = map.getCanvas().clientWidth;
+  const viewportHeight = map.getCanvas().clientHeight;
+  polygonOverlay.setAttribute("viewBox", "0 0 " + viewportWidth + " " + viewportHeight);
+  for (const feature of filteredFeatures) {
+    if (feature.geometry?.type !== "Polygon") continue;
+    const bounds = featureBounds(feature);
+    if (!bounds) continue;
+    const p0 = map.project(bounds[0]), p1 = map.project(bounds[1]);
+    if (Math.max(p0.x, p1.x) < -20 || Math.min(p0.x, p1.x) > viewportWidth + 20 ||
+        Math.max(p0.y, p1.y) < -20 || Math.min(p0.y, p1.y) > viewportHeight + 20) continue;
+    const parts = [];
+    for (const ring of feature.geometry.coordinates) {
+      if (!Array.isArray(ring) || ring.length < 4) continue;
+      parts.push("M" + ring.map(([lon, lat]) => {
+        const p = map.project([lon, lat]);
+        return p.x.toFixed(1) + "," + p.y.toFixed(1);
+      }).join("L") + "Z");
+    }
+    if (!parts.length) continue;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", parts.join(""));
+    path.setAttribute("class", feature.properties.nc === selectedNc ? "parcel-svg selected" : "parcel-svg");
+    path.setAttribute("fill-rule", "evenodd");
+    path.addEventListener("click", (event) => { event.stopPropagation(); selectFeature(feature.properties.nc); });
+    polygonOverlay.append(path);
+  }
+}
+map.on("move", schedulePolygonOverlay);
+map.on("resize", schedulePolygonOverlay);
+map.on("zoom", schedulePolygonOverlay);
 
 function buildDepartmentFilters() {
   const container = document.querySelector("#department-chips");
@@ -341,6 +402,7 @@ function selectFeature(nc) {
   selectedNc = nc;
   map.setFilter("parcelas-selected", ["==", ["get", "nc"], nc]);
   fillDetail(feature.properties);
+  schedulePolygonOverlay();
   document.querySelector("#parcel-detail").hidden = false;
   focusFeature(feature);
   openMobileSheet();
