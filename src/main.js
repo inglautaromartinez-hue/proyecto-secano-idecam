@@ -51,8 +51,8 @@ app.innerHTML = [
   '    </section>',
   '    <section class="monthly-card institutional-area" aria-label="Superficie cartografiada del secano">',
   '      <div class="section-title"><span>Superficie secano dibujada</span><small>Cobertura territorial</small></div>',
-  '      <strong class="monthly-total">746.539 <span>ha</span></strong>',
-  '      <p class="monthly-subtitle">Superficie acumulada de las parcelas incorporadas a la cartografía del proyecto.</p>',
+  '      <strong class="monthly-total">1.739.864 <span>ha</span></strong>',
+  '      <p class="monthly-subtitle">Superficie geométrica estimada del conjunto de parcelas relevadas del secano.</p>',
   '      <div class="coverage-row"><span>500 parcelas relevadas</span><b>San Rafael · Malargüe</b></div>',
   '    </section>',
 '    <section class="search-section">',
@@ -79,7 +79,7 @@ app.innerHTML = [
   '        <div class="detail-wide"><dt>Observación</dt><dd id="detail-obs"></dd></div>',
   '      </dl>',
   '    </section>',
-  '    <footer><span>Proyecto Secano · CAM · IDECAM</span><span>Corte: octubre 2026</span></footer>',
+  '    <footer><span>Proyecto Secano · CAM · IDECAM</span><span>Consolidación cartográfica · 2026</span></footer>',
   '  </aside>',
   '</main>'
 ].join("");
