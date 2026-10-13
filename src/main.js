@@ -2,6 +2,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { COLORS } from "./config.js";
 import { loadVerifiedParcels } from "./services/wfs.js";
+import { loadBundledVerifiedParcels } from "./services/verified-backup.js";
 import "./styles.css";
 
 const app = document.querySelector("#app");
@@ -105,19 +106,58 @@ map.on("load", async () => {
 
 async function loadData() {
   const status = document.querySelector("#source-status");
-  try {
-    const result = await loadVerifiedParcels();
-    allFeatures = result.collection.features;
+  const setFeatures = (features) => {
+    allFeatures = features;
+    const chips = document.querySelector("#department-chips");
+    chips.replaceChildren();
+    const all = document.createElement("button");
+    all.type = "button";
+    all.className = "chip active";
+    all.dataset.department = "all";
+    all.textContent = "Todos";
+    chips.append(all);
+    departmentFilter = "all";
+    conditionFilter = "all";
+    setActiveByValue("#condition-chips", "condition", "all");
+    clearSelection();
     buildDepartmentFilters();
     applyFilters();
     fitAll();
-    const labels = result.layers.map((layer) => layer.label).join(" · ");
-    const warning = result.failures.length ? " · " + result.failures.length + " fuente(s) no disponibles" : "";
-    status.textContent = allFeatures.length
-      ? allFeatures.length + " parcelas cargadas ahora · " + labels + warning
-      : "Sin cartografía cargada: no se pudieron recuperar las capas verificadas de IDECAM.";
+  };
+
+  let bundleFeatures = [];
+  try {
+    const bundle = await loadBundledVerifiedParcels();
+    bundleFeatures = bundle.collection.features;
+    setFeatures(bundleFeatures);
+    status.textContent = bundleFeatures.length + " verificadas · respaldo cartográfico validado";
   } catch {
-    status.textContent = "Error de conexión WFS. No se pueden mostrar parcelas hasta recuperar la capa.";
+    status.textContent = "Cargando capas IDECAM (respaldo local no disponible)…";
+  }
+
+  try {
+    const live = await loadVerifiedParcels();
+    const features = live.collection.features;
+    const baseNcs = new Set(bundleFeatures.map((feature) => feature.properties.nc));
+    const liveNcs = new Set(features.map((feature) => feature.properties.nc));
+    const complete = live.failures.length === 0 && features.length >= 205 &&
+      [...baseNcs].every((nc) => liveNcs.has(nc));
+
+    if (complete) {
+      setFeatures(features);
+      status.textContent = features.length + " verificadas · IDECAM WFS en vivo";
+    } else if (bundleFeatures.length) {
+      status.textContent = bundleFeatures.length + " verificadas · respaldo local; WFS incompleto o sin respuesta";
+    } else if (features.length) {
+      setFeatures(features);
+      status.textContent = features.length + " cargadas parcialmente · faltan fuentes WFS";
+    } else {
+      status.textContent = "Sin cartografía disponible; no fue posible recuperar WFS ni respaldo.";
+    }
+  } catch {
+    status.textContent = bundleFeatures.length
+      ? bundleFeatures.length + " verificadas · respaldo local (WFS no disponible)"
+      : "No se pudieron cargar las parcelas verificadas.";
   }
 }
 
