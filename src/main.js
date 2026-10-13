@@ -1,4 +1,4 @@
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { COLORS } from "./config.js";
 import { loadVerifiedParcels } from "./services/wfs.js";
