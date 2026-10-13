@@ -380,3 +380,12 @@ footer {
 .parcel-outline-overlay .parcel-svg.verified { fill: rgba(217,119,6,.22); stroke: #b45309; }
 .parcel-outline-overlay .parcel-svg.process { fill: rgba(13,148,136,.17); stroke: #0f766e; }
 .parcel-outline-overlay .parcel-svg.selected { fill: rgba(239,68,68,.24); stroke:#ef4444; stroke-width:4px; }
+
+/* Consulta parcelaria: sólo los tres datos solicitados. */
+.parcel-popup-content { display:grid; gap:7px; min-width:185px; padding:3px 0; }
+.parcel-popup-content > div { display:grid; gap:2px; padding-bottom:6px; border-bottom:1px solid #e5eeea; }
+.parcel-popup-content > div:last-child { border:0; padding-bottom:0; }
+.parcel-popup-content span { font-size:10px; color:#657b72; font-weight:600; }
+.parcel-popup-content strong { font-size:12px; color:#173e37; overflow-wrap:anywhere; }
+.maplibregl-popup-content { border-radius:12px; box-shadow:0 6px 26px rgba(12,45,37,.18); }
+.parcel-detail dl { grid-template-columns:1fr; }

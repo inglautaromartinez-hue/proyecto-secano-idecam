@@ -72,11 +72,11 @@ app.innerHTML = [
   '      <div class="detail-head"><div><span class="detail-kicker">Parcela seleccionada</span><strong id="detail-condition"></strong></div><button id="detail-close" type="button" aria-label="Cerrar detalle">×</button></div>',
   '      <dl>',
   '        <div><dt>Nomenclatura</dt><dd id="detail-nc"></dd></div>',
-  '        <div><dt>Departamento</dt><dd id="detail-dep"></dd></div>',
+  '        <div><dt>Superficie</dt><dd id="detail-area"></dd></div>',
   '        <div><dt>Plano</dt><dd id="detail-plano"></dd></div>',
-  '        <div><dt>SUPLETA</dt><dd id="detail-supleta"></dd></div>',
-  '        <div><dt>Fuente</dt><dd id="detail-source"></dd></div>',
-  '        <div class="detail-wide"><dt>Observación</dt><dd id="detail-obs"></dd></div>',
+
+
+
   '      </dl>',
   '    </section>',
   '    <footer><span>Proyecto Secano · CAM · IDECAM</span><span>Consolidación cartográfica · 2026</span></footer>',
@@ -114,6 +114,7 @@ let conditionFilter = "all";
 let statusFilter = "all";
 let isSatellite = false;
 let parcelHtmlMarkers = [];
+let activeParcelPopup = null;
 const polygonOverlay = document.querySelector("#parcel-outline-overlay");
 let overlayScheduled = false;
 
@@ -364,7 +365,11 @@ function selectFeature(nc) {
   if (!feature) return;
   selectedNc = nc;
   map.setFilter("parcelas-selected", ["==", ["get", "nc"], nc]);
+  const area = parcelAreaHectares(feature.geometry);
+  feature.properties.superficieDisplay = area === null ? "Sin superficie disponible" :
+    area.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ha";
   fillDetail(feature.properties);
+  showParcelPopup(feature, area);
   schedulePolygonOverlay();
   document.querySelector("#parcel-detail").hidden = false;
   focusFeature(feature);
@@ -376,17 +381,71 @@ function fillDetail(p) {
   condition.textContent = (p.condicion || "Sin dato") + " · " + p.estado;
   condition.dataset.condition = p.condicion || "Sin dato";
   document.querySelector("#detail-nc").textContent = formatNc(p.nc);
-  document.querySelector("#detail-dep").textContent = p.departamento || "—";
+  document.querySelector("#detail-area").textContent = p.superficieDisplay || "No disponible";
   document.querySelector("#detail-plano").textContent = p.plano || "—";
-  document.querySelector("#detail-supleta").textContent = p.supleta === 1 ? "1 · Supletorio" : p.supleta === 0 ? "0 · Con título" : "Sin dato";
-  document.querySelector("#detail-source").textContent = p.estado + " · " + (p.fuenteWfs || "Proyecto Secano");
-  document.querySelector("#detail-obs").textContent = p.observacion || "Sin observaciones";
+
+
+
 }
 
 function clearSelection() {
+  if (activeParcelPopup) { activeParcelPopup.remove(); activeParcelPopup = null; }
   selectedNc = null;
   if (map.getLayer("parcelas-selected")) map.setFilter("parcelas-selected", ["==", ["get", "nc"], "__none__"]);
   document.querySelector("#parcel-detail").hidden = true;
+}
+
+// Área esférica WGS84 en hectáreas calculada desde el polígono; no sustituye mensura oficial.
+export function parcelAreaHectares(geometry) {
+  if (!geometry || !["Polygon", "MultiPolygon"].includes(geometry.type)) return null;
+  const polygons = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  const radius = 6378137;
+  const rad = Math.PI / 180;
+  const ringArea = (ring) => {
+    let sum = 0;
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length];
+      if (![...a, ...b].every(Number.isFinite)) return NaN;
+      sum += (b[0] - a[0]) * rad * (2 + Math.sin(a[1] * rad) + Math.sin(b[1] * rad));
+    }
+    return Math.abs(sum * radius * radius / 2);
+  };
+  let total = 0;
+  for (const poly of polygons) {
+    if (!Array.isArray(poly) || !poly.length) return null;
+    let area = ringArea(poly[0]);
+    for (const hole of poly.slice(1)) area -= ringArea(hole);
+    if (!Number.isFinite(area) || area < 0) return null;
+    total += area;
+  }
+  return total / 10000;
+}
+
+function showParcelPopup(feature, area) {
+  if (activeParcelPopup) activeParcelPopup.remove();
+  const bounds = featureBounds(feature);
+  if (!bounds) return;
+  const center = [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+  const container = document.createElement("div");
+  container.className = "parcel-popup-content";
+  const fields = [
+    ["Nomenclatura", formatNc(feature.properties.nc)],
+    ["Nº de plano", feature.properties.plano || "No disponible"],
+    ["Superficie", area === null ? "No disponible" : area.toLocaleString("es-AR", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    }) + " ha"]
+  ];
+  for (const [label, value] of fields) {
+    const row = document.createElement("div");
+    const dt = document.createElement("span");
+    dt.textContent = label;
+    const dd = document.createElement("strong");
+    dd.textContent = value;
+    row.append(dt, dd);
+    container.append(row);
+  }
+  activeParcelPopup = new maplibregl.Popup({ offset: 14, closeOnMove: false, maxWidth: "280px" })
+    .setLngLat(center).setDOMContent(container).addTo(map);
 }
 
 function focusFeature(feature) {
