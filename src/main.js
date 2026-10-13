@@ -410,7 +410,7 @@ function selectFeature(nc) {
   schedulePolygonOverlay();
   document.querySelector("#parcel-detail").hidden = false;
   focusFeature(feature);
-  openMobileSheet();
+  // En mobile la consulta no altera la apertura del panel: el mapa sigue protagonista.
 }
 
 function fillDetail(p) {
@@ -489,7 +489,7 @@ function focusFeature(feature) {
   const bounds = featureBounds(feature);
   if (!bounds) return;
   map.fitBounds(bounds, {
-    padding: window.innerWidth <= 780 ? { top: 100, bottom: 260, left: 40, right: 40 } : 80,
+    padding: window.innerWidth <= 780 ? { top: 110, bottom: 165, left: 28, right: 28 } : 80,
     maxZoom: 16,
     duration: 650
   });
@@ -672,16 +672,50 @@ function boundsFromCoords(coords) {
 
 const panel = document.querySelector("#panel");
 const sheetHandle = document.querySelector("#sheet-handle");
+const mobileSheetMedia = window.matchMedia("(max-width: 780px)");
 let mobileExpanded = false;
+let sheetPointer = null;
+let suppressHandleClick = false;
+
+function setMobileSheetExpanded(expanded) {
+  mobileExpanded = Boolean(expanded);
+  panel.classList.toggle("expanded", mobileExpanded);
+  sheetHandle.setAttribute("aria-expanded", String(mobileExpanded));
+  sheetHandle.setAttribute("aria-label",
+    mobileExpanded ? "Bajar panel para ver el mapa" : "Subir panel para consultar parcelas");
+  if (!mobileExpanded) panel.scrollTop = 0;
+}
 
 sheetHandle.addEventListener("click", () => {
-  mobileExpanded = !mobileExpanded;
-  panel.classList.toggle("expanded", mobileExpanded);
+  if (!mobileSheetMedia.matches) return;
+  if (suppressHandleClick) {
+    suppressHandleClick = false;
+    return;
+  }
+  setMobileSheetExpanded(!mobileExpanded);
 });
 
-function openMobileSheet() {
-  if (window.matchMedia("(max-width: 780px)").matches) {
-    mobileExpanded = true;
-    panel.classList.add("expanded");
-  }
+// El tirador responde a arrastre vertical; el contenido puede desplazarse normalmente.
+sheetHandle.addEventListener("pointerdown", (event) => {
+  if (!mobileSheetMedia.matches || !event.isPrimary) return;
+  sheetPointer = { id: event.pointerId, startY: event.clientY, delta: 0, moved: false };
+  sheetHandle.setPointerCapture(event.pointerId);
+});
+sheetHandle.addEventListener("pointermove", (event) => {
+  if (!sheetPointer || sheetPointer.id !== event.pointerId) return;
+  sheetPointer.delta = event.clientY - sheetPointer.startY;
+  if (Math.abs(sheetPointer.delta) >= 12) sheetPointer.moved = true;
+});
+function finishSheetGesture(event) {
+  if (!sheetPointer || sheetPointer.id !== event.pointerId) return;
+  const { delta, moved } = sheetPointer;
+  sheetPointer = null;
+  if (sheetHandle.hasPointerCapture(event.pointerId)) sheetHandle.releasePointerCapture(event.pointerId);
+  if (!moved) return;
+  suppressHandleClick = true;
+  setMobileSheetExpanded(delta < 0);
 }
+sheetHandle.addEventListener("pointerup", finishSheetGesture);
+sheetHandle.addEventListener("pointercancel", finishSheetGesture);
+mobileSheetMedia.addEventListener("change", () => setMobileSheetExpanded(false));
+setMobileSheetExpanded(false);
