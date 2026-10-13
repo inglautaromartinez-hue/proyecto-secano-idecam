@@ -214,18 +214,6 @@ function addParcelLayers() {
     }
   });
   map.addLayer({
-    id: "cluster-count",
-    type: "symbol",
-    source: "parcel-markers",
-    filter: ["has", "point_count"],
-    maxzoom: 12,
-    layout: {
-      "text-field": ["get", "point_count_abbreviated"],
-      "text-size": 12
-    },
-    paint: { "text-color": "#ffffff" }
-  });
-  map.addLayer({
     id: "parcel-dots",
     type: "circle",
     source: "parcel-markers",
