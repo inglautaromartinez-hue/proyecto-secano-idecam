@@ -114,10 +114,10 @@ async function loadData() {
     const labels = result.layers.map((layer) => layer.label).join(" · ");
     const warning = result.failures.length ? " · " + result.failures.length + " fuente(s) no disponibles" : "";
     status.textContent = allFeatures.length
-      ? allFeatures.length + " NC únicas cargadas · " + labels + warning
-      : "No se encontraron capas verificadas en WFS.";
+      ? allFeatures.length + " parcelas cargadas ahora · " + labels + warning
+      : "Sin cartografía cargada: no se pudieron recuperar las capas verificadas de IDECAM.";
   } catch {
-    status.textContent = "No se pudo conectar con IDECAM. Reintentá en unos minutos.";
+    status.textContent = "Error de conexión WFS. No se pueden mostrar parcelas hasta recuperar la capa.";
   }
 }
 
