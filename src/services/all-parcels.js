@@ -27,12 +27,12 @@ export async function loadAllParcels({ fetchImpl=fetch }={}) {
     const geometry=polygons?.length?decodeGeometry(polygons):
       point?.length===2?{type:"Point",coordinates:point.map(x=>x/1000000)}:null;
     if(!geometry)throw new Error("SECANO_500_GEOMETRY_MISSING");
-    const condition=supleta===1?"Supletorio":supleta===0?"Con título":"Sin dato";
+    const condition=supleta===1?"Supletorio":"Con título";
     const department=DEPARTMENT_NAMES[nc.slice(0,2)]||"Departamento "+nc.slice(0,2);
     return {type:"Feature",id:nc,geometry,properties:{
       nc,plano:String(plano||""),supleta,condicion:condition,departamento:department,
       estado:verified?"Verificada":"En proceso",verificada:Boolean(verified),
-      periodo:"Consolidado del Proyecto Secano",fuenteWfs:verified?"Cartografía verificada":"Cartografía en proceso",
+      periodo:"Proyecto Secano",fuenteWfs:"Relevamiento parcelario del Proyecto Secano",
       observacion:geometry.type==="Point"?"Geometría de origen incompleta: localización puntual solamente.":null
     }};
   });
