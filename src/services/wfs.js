@@ -3,9 +3,14 @@ import { DEPARTMENT_NAMES, WFS_LAYER_GROUPS, WFS_URL } from "../config.js";
 export async function loadVerifiedParcels({ fetchImpl = fetch } = {}) {
   const loaded = [];
   const failures = [];
+  const discovered = await discoverTypeNames(fetchImpl).catch(() => []);
 
   for (const group of WFS_LAYER_GROUPS) {
-    const result = await loadFirstAvailableLayer(group, fetchImpl);
+    const autoCandidates = matchDiscoveredLayers(group, discovered);
+    const result = await loadFirstAvailableLayer({
+      ...group,
+      candidates: [...new Set([...group.candidates, ...autoCandidates])]
+    }, fetchImpl);
     if (result) loaded.push(result);
     else failures.push(group.label);
   }
@@ -24,6 +29,36 @@ export async function loadVerifiedParcels({ fetchImpl = fetch } = {}) {
     layers: loaded.map(({ collection, ...meta }) => meta),
     failures
   };
+}
+
+async function discoverTypeNames(fetchImpl) {
+  const url = new URL(WFS_URL);
+  url.search = new URLSearchParams({
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetCapabilities"
+  });
+
+  const response = await fetchImpl(url, { headers: { Accept: "application/xml,text/xml,*/*" } });
+  if (!response.ok) return [];
+
+  const xml = await response.text();
+  const documentXml = new DOMParser().parseFromString(xml, "application/xml");
+  if (documentXml.querySelector("parsererror")) return [];
+
+  return [...documentXml.querySelectorAll("FeatureType > Name, wfs\\:FeatureType > Name")]
+    .map((node) => node.textContent?.trim())
+    .filter(Boolean);
+}
+
+function matchDiscoveredLayers(group, typeNames) {
+  return typeNames.filter((typeName) => {
+    const value = typeName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!value.includes("supletorios")) return false;
+    if (group.id === "agosto") return value.includes("agosto");
+    if (group.id === "octubre") return value.includes("oct") || value.includes("octubre");
+    return false;
+  });
 }
 
 async function loadFirstAvailableLayer(group, fetchImpl) {
