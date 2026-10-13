@@ -66,7 +66,7 @@ app.innerHTML = [
   '      <div class="filter-block"><span class="filter-label">Condición</span><div class="chips" id="condition-chips"><button type="button" class="chip active" data-condition="all">Todas</button><button type="button" class="chip" data-condition="Supletorio">Supletorio</button><button type="button" class="chip" data-condition="Con título">Con título</button><button type="button" class="chip" data-condition="Sin dato">Sin dato</button></div></div>',
   '      <div class="filter-block"><span class="filter-label">Estado de consolidación</span><div class="chips" id="status-chips"><button type="button" class="chip active" data-status="all">Todas</button><button type="button" class="chip" data-status="Verificada">Verificadas</button><button type="button" class="chip" data-status="En proceso">En proceso</button></div></div>',
   '    </section>',
-  '    <section class="visible-card"'><div><span>Parcelas en el mapa</span><strong id="visible-count">—</strong></div><small id="source-status">Cargando cartografía…</small></section>',
+  '    <section class="visible-card"><div><span>Parcelas en el mapa</span><strong id="visible-count">—</strong></div><small id="source-status">Cargando cartografía…</small></section>',
   '    <p id="empty-filter-note" class="empty-filter-note" hidden>No hay parcelas disponibles con estos filtros. Probá otra opción.</p>',
   '    <section id="parcel-detail" class="parcel-detail" hidden>',
   '      <div class="detail-head"><div><span class="detail-kicker">Parcela seleccionada</span><strong id="detail-condition"></strong></div><button id="detail-close" type="button" aria-label="Cerrar detalle">×</button></div>',
