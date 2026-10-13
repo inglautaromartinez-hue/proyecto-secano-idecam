@@ -31,7 +31,7 @@ export async function loadBundledVerifiedParcels({ fetchImpl = fetch } = {}) {
   const features = rows.map((row) => {
     if (!Array.isArray(row) || row.length !== 4) throw new Error("VERIFIED_BUNDLE_ROW_INVALID");
     const [nc, plano, octoberFlag, rings] = row;
-    if (typeof nc !== "string" || !/^\d{21}$/.test(nc) || seen.has(nc)) {
+    if (typeof nc !== "string" || !/^\d{20,21}$/.test(nc) || seen.has(nc)) {
       throw new Error("VERIFIED_BUNDLE_NOMENCLATURE_INVALID");
     }
     seen.add(nc);
@@ -63,7 +63,7 @@ export async function loadBundledVerifiedParcels({ fetchImpl = fetch } = {}) {
         condicion: "Supletorio",
         estado: "Validada",
         periodo: octoberFlag ? "Verificadas · octubre 2026" : "Verificadas · 28 agosto 2026",
-        observacion: null,
+        observacion: nc.length === 20 ? "NC de 20 dígitos: cotejar con plano de mensura." : null,
         fuenteWfs: "Respaldo validado (ZIP de IDECAM)"
       },
       geometry: { type: "Polygon", coordinates: coords }
