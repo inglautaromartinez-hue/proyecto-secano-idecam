@@ -42,7 +42,13 @@ app.innerHTML = [
   '        <div><strong>500</strong><span>Total</span></div>',
   '      </div>',
   '    </section>',
-  '    <section class="search-section">',
+    '    <section class="condition-chart" aria-label="Distribución de condición jurídica del inventario">',
+  '      <div class="section-title"><span>Condición del inventario</span><small>500 parcelas</small></div>',
+  '      <div class="chart-body"><div class="donut" role="img" aria-label="205 supletorias, 257 con título, 38 sin dato"><span><strong>500</strong><small>parcelas</small></span></div>',
+  '      <div class="chart-labels"><div><i class="chart-dot supletorio"></i><span>Supletorio</span><b>205 · 41%</b></div><div><i class="chart-dot titulo"></i><span>Con título</span><b>257 · 51,4%</b></div><div><i class="chart-dot sindato"></i><span>Sin dato</span><b>38 · 7,6%</b></div></div></div>',
+  '      <p class="chart-note">Inventario general (crudo + verificado). Sólo las 205 supletorias verificadas están publicadas en este mapa.</p>',
+  '    </section>',
+'    <section class="search-section">',
   '      <label for="parcel-search">Buscar parcela o plano</label>',
   '      <div class="search-row"><input id="parcel-search" type="search" placeholder="Nomenclatura o Nº de plano" autocomplete="off"><button id="search-clear" type="button" aria-label="Limpiar búsqueda">×</button></div>',
   '      <div id="search-results" class="search-results" hidden></div>',
@@ -72,8 +78,8 @@ app.innerHTML = [
 
 const map = new maplibregl.Map({
   container: "map",
-  center: [-68.75, -35.0],
-  zoom: 5.7,
+  center: [-68.95, -35.2],
+  zoom: 6.4,
   minZoom: 4,
   maxZoom: 19,
   style: {
@@ -170,7 +176,7 @@ function addParcelLayers() {
     source: "parcelas",
     paint: {
       "fill-color": ["match", ["get", "condicion"], "Supletorio", COLORS.supletorio, "Con título", COLORS.titulo, COLORS.sinDato],
-      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.30, 10, 0.42, 16, 0.30]
+      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.68, 10, 0.52, 16, 0.32]
     }
   });
 
@@ -179,10 +185,69 @@ function addParcelLayers() {
     type: "line",
     source: "parcelas",
     paint: {
-      "line-color": COLORS.outline,
-      "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.8, 11, 1.4, 16, 2],
+      "line-color": "#a34c06",
+      "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1.8, 11, 2.2, 16, 2.6],
       "line-opacity": 0.88
     }
+  });
+
+  // Puntos de localización para distinguir parcelas pequeñas a escala regional.
+  map.addSource("parcel-markers", {
+    type: "geojson",
+    data: emptyCollection(),
+    cluster: true,
+    clusterRadius: 36,
+    clusterMaxZoom: 10
+  });
+  map.addLayer({
+    id: "parcel-clusters",
+    type: "circle",
+    source: "parcel-markers",
+    filter: ["has", "point_count"],
+    maxzoom: 12,
+    paint: {
+      "circle-color": "#b45309",
+      "circle-radius": ["step", ["get", "point_count"], 17, 10, 21, 35, 26],
+      "circle-opacity": 0.9,
+      "circle-stroke-width": 2.5,
+      "circle-stroke-color": "#ffffff"
+    }
+  });
+  map.addLayer({
+    id: "cluster-count",
+    type: "symbol",
+    source: "parcel-markers",
+    filter: ["has", "point_count"],
+    maxzoom: 12,
+    layout: {
+      "text-field": ["get", "point_count_abbreviated"],
+      "text-size": 12
+    },
+    paint: { "text-color": "#ffffff" }
+  });
+  map.addLayer({
+    id: "parcel-dots",
+    type: "circle",
+    source: "parcel-markers",
+    filter: ["!", ["has", "point_count"]],
+    maxzoom: 12,
+    paint: {
+      "circle-color": "#e2a132",
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 5, 8, 7, 11, 9],
+      "circle-stroke-width": 2,
+      "circle-stroke-color": "#6b3508"
+    }
+  });
+  map.on("click", "parcel-clusters", async (event) => {
+    const cluster = event.features?.[0];
+    if (!cluster) return;
+    const id = cluster.properties.cluster_id;
+    const zoom = await map.getSource("parcel-markers").getClusterExpansionZoom(id);
+    map.easeTo({ center: cluster.geometry.coordinates, zoom: Math.min(zoom, 15), duration: 550 });
+  });
+  map.on("click", "parcel-dots", (event) => {
+    const feature = event.features?.[0];
+    if (feature?.properties?.nc) selectFeature(feature.properties.nc);
   });
 
   map.addLayer({
@@ -212,6 +277,17 @@ function applyFilters() {
 
   const source = map.getSource("parcelas");
   if (source) source.setData({ type: "FeatureCollection", features: filteredFeatures });
+  const markerSource = map.getSource("parcel-markers");
+  if (markerSource) {
+    const markers = filteredFeatures.map((feature) => {
+      const bounds = featureBounds(feature);
+      if (!bounds) return null;
+      const [[minLon, minLat], [maxLon, maxLat]] = bounds;
+      return { type: "Feature", properties: { nc: feature.properties.nc },
+        geometry: { type: "Point", coordinates: [(minLon + maxLon) / 2, (minLat + maxLat) / 2] } };
+    }).filter(Boolean);
+    markerSource.setData({ type: "FeatureCollection", features: markers });
+  }
   document.querySelector("#visible-count").textContent = filteredFeatures.length.toLocaleString("es-AR");
 
   if (selectedNc && !filteredFeatures.some((f) => f.properties.nc === selectedNc)) clearSelection();
@@ -275,7 +351,7 @@ function fitAll() {
   if (!bounds) return;
   map.fitBounds(bounds, {
     padding: window.innerWidth <= 780 ? { top: 110, bottom: 180, left: 40, right: 40 } : 70,
-    maxZoom: 9,
+    maxZoom: 8,
     duration: 700
   });
 }
