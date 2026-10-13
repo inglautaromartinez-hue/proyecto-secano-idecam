@@ -394,3 +394,44 @@ footer {
 /* Resumen ejecutivo vinculado a los filtros del mapa */
 .progress-grid.two-stat { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .condition-chart .chart-labels { gap: 16px; }
+
+/* Surface principal: métricas del Secano con mayor jerarquía. */
+.area-card.institutional-area {
+  position:relative;overflow:hidden;padding:18px;border-radius:17px;
+  color:#f3fcfa;border:1px solid #0d5753;
+  background:linear-gradient(125deg,#103942,#145c58 72%,#104d55);
+  box-shadow:0 14px 30px rgba(14,64,63,.19);
+}
+.area-card.institutional-area::before {
+  content:"";position:absolute;width:200px;height:200px;top:-105px;right:-80px;
+  background:radial-gradient(circle,rgba(129,224,198,.26),transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
+.area-card-header{display:flex;align-items:start;justify-content:space-between;gap:8px}
+.area-card-heading{display:flex;gap:10px;align-items:center}
+.area-card-symbol{display:grid;place-items:center;flex:0 0 36px;height:36px;
+  border:1px solid rgba(198,250,234,.29);border-radius:11px;
+  background:rgba(255,255,255,.11);font-size:19px;font-weight:800}
+.area-card-kicker{display:block;color:#b5e4d7;font-size:9px;letter-spacing:.10em;font-weight:800}
+.area-card-heading h3{margin:3px 0 0;font-size:14px;line-height:1.25}
+.area-card-unit{color:#c3e3dc;font-size:9px;letter-spacing:.08em;font-weight:750}
+.area-card-value{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;margin:18px 0 4px}
+.area-card.institutional-area .monthly-total{color:#fff;font-size:clamp(29px,3vw,39px);
+  font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.04em}
+.area-card-value-unit{font-size:18px;font-weight:700;color:#c3eadf}
+.area-card.institutional-area .monthly-subtitle{color:#d4e9e2;font-size:11px;
+  line-height:1.5;margin:9px 0 18px}
+.area-share-head{display:flex;justify-content:space-between;gap:10px;
+  font-size:10px;color:#d2e8e0;margin-bottom:8px}
+.area-share-head strong{color:#fff;font-size:12px;font-variant-numeric:tabular-nums}
+.area-share-track{height:8px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.19)}
+.area-share-track span{display:block;height:100%;border-radius:inherit;
+  background:linear-gradient(90deg,#a4f0cd,#ebfdf4);transition:width .25s ease}
+.area-card .coverage-row{border-top:1px solid rgba(255,255,255,.17);
+  margin-top:15px;padding-top:12px;color:#d6ebe4}
+.area-card .coverage-row b{color:#fff}
+@media(max-width:780px){
+  .sheet-handle{touch-action:none;min-height:38px;cursor:grab}
+  .sheet-handle:active{cursor:grabbing}
+  .area-card.institutional-area{padding:15px}
+}
