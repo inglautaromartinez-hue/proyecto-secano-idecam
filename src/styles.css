@@ -234,3 +234,54 @@ footer {
   .panel { padding-inline: 12px; }
   .progress-head small { display: none; }
 }
+
+
+/* Distribución jurídica del inventario total: no confundir con la base validada */
+.condition-chart {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #d8e3df;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(20,43,45,.055);
+}
+.condition-chart .section-title { margin-bottom: 12px; }
+.condition-chart .section-title small { font-size: 10px; color: #718481; }
+.chart-body { display: flex; align-items: center; gap: 16px; }
+.donut {
+  flex: 0 0 128px;
+  width: 128px;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(#d97706 0 41%, #0f766e 41% 92.4%, #64748b 92.4% 100%);
+}
+.donut > span {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff;
+}
+.donut strong { font-size: 26px; line-height: 1.1; letter-spacing: -.04em; }
+.donut small { font-size: 10px; color: #627773; }
+.chart-labels { min-width: 0; display: grid; gap: 10px; flex: 1; }
+.chart-labels > div { display: grid; grid-template-columns: 9px minmax(0,1fr); gap: 2px 7px; align-items: center; }
+.chart-labels span { font-size: 11px; color: #425c5a; }
+.chart-labels b { grid-column: 2; font-size: 11px; white-space: nowrap; }
+.chart-dot { width: 9px; height: 9px; border-radius: 50%; background: #64748b; }
+.chart-dot.supletorio { background: #d97706; }
+.chart-dot.titulo { background: #0f766e; }
+.chart-note { margin: 12px 0 0; color: #6b7773; font-size: 10px; line-height: 1.4; }
+@media (max-width: 420px) {
+  .condition-chart { padding: 11px; }
+  .chart-body { gap: 12px; }
+  .donut { flex-basis: 112px; width: 112px; height: 112px; }
+  .donut > span { width: 76px; height: 76px; }
+  .donut strong { font-size: 23px; }
+  .chart-labels span, .chart-labels b { font-size: 10px; }
+}
