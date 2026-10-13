@@ -153,23 +153,6 @@ function addParcelLayers() {
     paint: { "line-color": COLORS.highlight, "line-width": 4 }
   });
 
-  map.addLayer({
-    id: "parcelas-label",
-    type: "symbol",
-    source: "parcelas",
-    minzoom: 12,
-    layout: {
-      "text-field": ["coalesce", ["get", "plano"], ["get", "nc"]],
-      "text-size": 10,
-      "text-allow-overlap": false
-    },
-    paint: {
-      "text-color": "#102a2e",
-      "text-halo-color": "rgba(255,255,255,.92)",
-      "text-halo-width": 1.3
-    }
-  });
-
   map.on("click", "parcelas-fill", (event) => {
     const feature = event.features && event.features[0];
     if (feature) selectFeature(feature.properties.nc);
