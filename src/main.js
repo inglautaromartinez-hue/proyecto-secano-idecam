@@ -1,6 +1,7 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { COLORS } from "./config.js";
+import { conditionClass } from "./condition-theme.js";
 import { loadVerifiedParcels } from "./services/wfs.js";
 import { loadAllParcels } from "./services/all-parcels.js";
 import "./styles.css";
@@ -23,7 +24,7 @@ app.innerHTML = [
   '    <div class="map-legend">',
   '      <strong>Condición</strong>',
   '      <span><i style="--legend:#d97706"></i>Supletorio</span>',
-  '      <span><i style="--legend:#0f766e"></i>Con título</span>',
+  '      <span><i style="--legend:#2563eb"></i>Con título</span>',
   '    </div>',
   '  </section>',
   '  <aside class="panel" id="panel">',
@@ -42,11 +43,16 @@ app.innerHTML = [
   '      <div class="chart-body"><div id="condition-donut" class="donut" role="img" aria-label="Condiciones de las parcelas visibles"><span><strong id="donut-total">500</strong><small>parcelas</small></span></div>',
   '        <div class="chart-labels"><div><i class="chart-dot supletorio"></i><span>Supletorio</span><b id="chart-supletorio">207</b></div><div><i class="chart-dot titulo"></i><span>Con título</span><b id="chart-titulo">293</b></div></div></div>',
   '    </section>',
-  '    <section class="monthly-card institutional-area" aria-label="Superficie cartografiada del secano">',
-  '      <div class="section-title"><span>Superficie secano dibujada</span><small>Cobertura territorial</small></div>',
-  '      <strong class="monthly-total"><span id="dashboard-area">—</span> <span>ha</span></strong>',
-  '      <p class="monthly-subtitle">Superficie geométrica estimada del conjunto de parcelas relevadas del secano.</p>',
-  '      <div class="coverage-row"><span id="area-count">500 parcelas</span><b id="area-location">San Rafael · Malargüe</b></div>',
+  '    <section class="monthly-card institutional-area area-card" aria-label="Superficie cartografiada del secano">',
+  '      <div class="area-card-header">',
+  '        <div class="area-card-heading"><span class="area-card-symbol" aria-hidden="true">↗</span><div><span class="area-card-kicker">COBERTURA TERRITORIAL</span><h3>Superficie secano dibujada</h3></div></div>',
+  '        <span class="area-card-unit">HECTÁREAS</span>',
+  '      </div>',
+  '      <div class="area-card-value"><strong class="monthly-total" id="dashboard-area" aria-live="polite">—</strong><span class="area-card-value-unit">ha</span></div>',
+  '      <p class="monthly-subtitle">Superficie geométrica de las parcelas relevadas que cumplen los filtros seleccionados.</p>',
+  '      <div class="area-share-head"><span>Participación en superficie relevada</span><strong id="area-share">100%</strong></div>',
+  '      <div class="area-share-track" role="presentation"><span id="area-share-bar" style="width:100%"></span></div>',
+  '      <div class="coverage-row"><span id="area-count">500 parcelas con superficie</span><b id="area-location">Cobertura territorial</b></div>',
   '    </section>',
 '    <section class="search-section">',
   '      <label for="parcel-search">Buscar parcela o plano</label>',
@@ -106,6 +112,7 @@ let conditionFilter = "all";
 let isSatellite = false;
 let parcelHtmlMarkers = [];
 let activeParcelPopup = null;
+let totalCatalogAreaHa = 0;
 const polygonOverlay = document.querySelector("#parcel-outline-overlay");
 let overlayScheduled = false;
 
@@ -119,6 +126,7 @@ async function loadData() {
   try {
     const result=await loadAllParcels();
     allFeatures=result.collection.features;
+    totalCatalogAreaHa = allFeatures.reduce((sum, feature) => sum + (parcelAreaHectares(feature.geometry) ?? 0), 0);
     const chips=document.querySelector("#department-chips");
     chips.replaceChildren();
     const all=document.createElement("button");
@@ -142,7 +150,7 @@ function addParcelLayers() {
     type: "fill",
     source: "parcelas",
     paint: {
-      "fill-color": ["match", ["get", "condicion"], "Supletorio", COLORS.supletorio, "Con título", COLORS.titulo, COLORS.sinDato],
+      "fill-color": ["match", ["get", "condicion"], "Supletorio", COLORS.supletorio, "Con título", COLORS.titulo, COLORS.titulo],
       "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.68, 10, 0.52, 16, 0.32]
     }
   });
@@ -152,7 +160,7 @@ function addParcelLayers() {
     type: "line",
     source: "parcelas",
     paint: {
-      "line-color": "#a34c06",
+      "line-color": ["match", ["get", "condicion"], "Supletorio", "#92400e", "Con título", "#1d4ed8", "#1d4ed8"],
       "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1.8, 11, 2.2, 16, 2.6],
       "line-opacity": 0.88
     }
@@ -173,7 +181,7 @@ function addParcelLayers() {
     filter: ["has", "point_count"],
     maxzoom: 12,
     paint: {
-      "circle-color": "#b45309",
+      "circle-color": "#35556d",
       "circle-radius": ["step", ["get", "point_count"], 17, 10, 21, 35, 26],
       "circle-opacity": 0.9,
       "circle-stroke-width": 2.5,
@@ -187,10 +195,10 @@ function addParcelLayers() {
     filter: ["!", ["has", "point_count"]],
     maxzoom: 12,
     paint: {
-      "circle-color": "#e2a132",
+      "circle-color": ["match", ["get", "condicion"], "Supletorio", "#f59e0b", "Con título", "#3b82f6", "#3b82f6"],
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 5, 8, 7, 11, 9],
       "circle-stroke-width": 2,
-      "circle-stroke-color": "#6b3508"
+      "circle-stroke-color": ["match", ["get", "condicion"], "Supletorio", "#92400e", "Con título", "#1d4ed8", "#1d4ed8"]
     }
   });
   map.on("click", "parcel-clusters", async (event) => {
@@ -239,7 +247,7 @@ function applyFilters() {
       const bounds = featureBounds(feature);
       if (!bounds) return null;
       const [[minLon, minLat], [maxLon, maxLat]] = bounds;
-      return { type: "Feature", properties: { nc: feature.properties.nc },
+      return { type: "Feature", properties: { nc: feature.properties.nc, condicion: feature.properties.condicion },
         geometry: { type: "Point", coordinates: [(minLon + maxLon) / 2, (minLat + maxLat) / 2] } };
     }).filter(Boolean);
     markerSource.setData({ type: "FeatureCollection", features: markers });
@@ -278,9 +286,14 @@ function updateDashboard() {
   document.querySelector("#chart-titulo").textContent = fmt(titulo) + " · " + pct(titulo);
   document.querySelector("#condition-donut").style.background =
     count ? "conic-gradient(#d97706 0 " + (100 * supletorio/count) +
-      "%, #0f766e " + (100 * supletorio/count) + "% 100%)" : "#dfe9e5";
+      "%, #2563eb " + (100 * supletorio/count) + "% 100%)" : "#dfe9e5";
   document.querySelector("#dashboard-area").textContent =
     totalHa.toLocaleString("es-AR", {maximumFractionDigits:0});
+  const areaShare = totalCatalogAreaHa > 0 ? Math.max(0, Math.min(100, (totalHa / totalCatalogAreaHa) * 100)) : 0;
+  document.querySelector("#area-share").textContent = areaShare.toLocaleString("es-AR", {
+    maximumFractionDigits:1
+  }) + "%";
+  document.querySelector("#area-share-bar").style.width = areaShare + "%";
   document.querySelector("#area-count").textContent = fmt(areaCount) + " parcelas con superficie";
   document.querySelector("#area-location").textContent = deps.size === 1 ? [...deps][0] : "Cobertura territorial";
 }
@@ -300,7 +313,7 @@ function renderHtmlParcelMarkers() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "parcel-pin pin-verified";
+    button.className = "parcel-pin " + conditionClass(feature.properties.condicion);
     button.title = "Ver parcela " + feature.properties.nc;
     button.setAttribute("aria-label", "Ver parcela " + feature.properties.nc);
     button.addEventListener("click", (event) => {
@@ -361,7 +374,7 @@ function renderPolygonOverlay() {
     if (!parts.length) continue;
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", parts.join(""));
-    path.setAttribute("class", "parcel-svg verified" + (feature.properties.nc === selectedNc ? " selected" : ""));
+    path.setAttribute("class", "parcel-svg " + conditionClass(feature.properties.condicion) + (feature.properties.nc === selectedNc ? " selected" : ""));
     path.setAttribute("fill-rule", "evenodd");
     path.addEventListener("click", (event) => { event.stopPropagation(); selectFeature(feature.properties.nc); });
     polygonOverlay.append(path);
