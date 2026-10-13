@@ -285,3 +285,29 @@ footer {
   .donut strong { font-size: 23px; }
   .chart-labels span, .chart-labels b { font-size: 10px; }
 }
+
+
+/* Marcadores de parcela independientes del render de capas vectoriales. */
+.parcel-pin {
+  display: block;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  background: #f59e0b;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #8a3c00, 0 3px 12px rgba(0,0,0,.45);
+  cursor: pointer;
+  transition: transform .15s ease, opacity .15s ease;
+}
+.parcel-pin:hover,
+.parcel-pin:focus-visible {
+  z-index: 2;
+  transform: scale(1.45);
+  outline: 2px solid #004950;
+  outline-offset: 3px;
+}
+.parcel-pin.pin-hidden { opacity: 0; pointer-events: none; }
+@media (max-width:780px) {
+  .parcel-pin { width: 17px; height: 17px; }
+}

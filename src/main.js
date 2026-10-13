@@ -104,6 +104,7 @@ let selectedNc = null;
 let departmentFilter = "all";
 let conditionFilter = "all";
 let isSatellite = false;
+let parcelHtmlMarkers = [];
 
 map.on("load", async () => {
   addParcelLayers();
@@ -129,6 +130,7 @@ async function loadData() {
     buildDepartmentFilters();
     applyFilters();
     fitAll();
+    renderHtmlParcelMarkers();
   };
 
   let bundleFeatures = [];
@@ -277,9 +279,48 @@ function applyFilters() {
     markerSource.setData({ type: "FeatureCollection", features: markers });
   }
   document.querySelector("#visible-count").textContent = filteredFeatures.length.toLocaleString("es-AR");
+  renderHtmlParcelMarkers();
 
   if (selectedNc && !filteredFeatures.some((f) => f.properties.nc === selectedNc)) clearSelection();
 }
+
+// Respaldo visual independiente de la fuente GeoJSON de MapLibre.
+// Cada marcador se ancla a una coordenada real derivada del polígono.
+function renderHtmlParcelMarkers() {
+  for (const marker of parcelHtmlMarkers) marker.remove();
+  parcelHtmlMarkers = [];
+  for (const feature of filteredFeatures) {
+    const bounds = featureBounds(feature);
+    if (!bounds) continue;
+    const [[minX, minY], [maxX, maxY]] = bounds;
+    const lng = (minX + maxX) / 2;
+    const lat = (minY + maxY) / 2;
+    if (![lng, lat].every(Number.isFinite)) continue;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "parcel-pin";
+    button.title = "Ver parcela " + feature.properties.nc;
+    button.setAttribute("aria-label", "Ver parcela " + feature.properties.nc);
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectFeature(feature.properties.nc);
+    });
+    parcelHtmlMarkers.push(new maplibregl.Marker({
+      element: button, anchor: "center"
+    }).setLngLat([lng, lat]).addTo(map));
+  }
+  updateHtmlMarkersVisibility();
+}
+
+function updateHtmlMarkersVisibility() {
+  const zoom = map.getZoom();
+  for (const marker of parcelHtmlMarkers) {
+    marker.getElement().classList.toggle("pin-hidden", zoom >= 12);
+  }
+}
+
+map.on("zoomend", updateHtmlMarkersVisibility);
 
 function buildDepartmentFilters() {
   const container = document.querySelector("#department-chips");
