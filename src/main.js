@@ -14,7 +14,7 @@ app.innerHTML = [
   '    <div id="map"></div>',
   '    <svg id="parcel-outline-overlay" class="parcel-outline-overlay" aria-label="Límites de parcelas al acercar el mapa"></svg>',
   '    <div class="top-brand">',
-  '      <div><span class="brand-kicker">IDECAM · Colegio de Agrimensura de Mendoza</span><h1>Proyecto Secano</h1></div>',
+  '      <div class="cam-brand-lockup"><a class="cam-symbol" href="https://www.agrimensuramza.com/" target="_blank" rel="noopener noreferrer" aria-label="Colegio de Agrimensura de Mendoza · sitio oficial" title="Colegio de Agrimensura de Mendoza"><img src="/cam-emblem.svg" alt="Isotipo CAM" width="42" height="42"></a><div class="cam-brand-text"><span class="brand-kicker">IDECAM · Colegio de Agrimensura de Mendoza</span><h1>Proyecto Secano</h1></div></div>',
   '      <span class="live-pill"><i></i> 500 parcelas relevadas</span>',
   '    </div>',
   '    <div class="map-tools">',
